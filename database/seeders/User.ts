@@ -2,7 +2,7 @@ import BaseSeeder from '@ioc:Adonis/Lucid/Seeder'
 import User from 'App/Models/User'
 
 export default class extends BaseSeeder {
-  public async run () {
+  public async run() {
     User.updateOrCreateMany('nickname', [
       { nickname: 'foo', name: 'Jano', surname: 'Foo', password: '12345', state: 'offline', email: 'foo@example.com' },
       { nickname: 'bar', name: 'Ondro', surname: 'Bar', password: '12345', state: 'online', email: 'bar@example.com' },

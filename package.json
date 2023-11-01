@@ -12,7 +12,11 @@
   "eslintConfig": {
     "extends": [
       "plugin:adonis/typescriptApp"
-    ]
+    ],
+    "rules": {
+      "space-before-function-paren": "off",
+      "@typescript-eslint/space-before-function-paren": "off"
+    }
   },
   "eslintIgnore": [
     "build"
