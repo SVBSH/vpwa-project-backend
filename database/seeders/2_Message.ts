@@ -33,7 +33,7 @@ export default class extends BaseSeeder {
           {
             channelId: channelGeneral.id,
             createdBy: userFoo.id,
-            content: 'More messages',
+            content: 'This is some message',
           },
           {
             channelId: channelGeneral.id,
