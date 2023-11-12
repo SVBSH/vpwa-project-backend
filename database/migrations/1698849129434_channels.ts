@@ -7,6 +7,7 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id')
       table.string('name').notNullable().unique()
+      table.bigInteger('channel_admin')
       table.boolean('is_public').defaultTo(false)
       table.timestamp('created_at', { useTz: true })
     })
