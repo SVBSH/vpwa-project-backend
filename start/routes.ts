@@ -30,3 +30,12 @@ Route.group(() => {
   Route.post('logout', 'AuthController.logout').middleware('auth')
   Route.get('me', 'AuthController.me').middleware('auth')
 }).prefix('auth')
+
+Route
+  .group(() => {
+    Route.get('', 'ChannelsController.getChannels')
+    Route.get(':id', 'ChannelsController.getChannel')
+    Route.get(':id/messages', 'ChannelsController.getChannelMessages')
+  })
+  // .middleware('auth')
+  .prefix('channel')
