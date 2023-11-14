@@ -10,7 +10,7 @@ export default class Channel extends BaseModel {
   @column()
   public name: string
 
-  @column()
+  @column({ serializeAs: 'admin' })
   public channelAdmin: number
 
   @column({ serializeAs: null })
