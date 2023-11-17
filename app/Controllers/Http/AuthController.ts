@@ -21,11 +21,28 @@ export default class AuthController {
     return auth.use('api').logout()
   }
 
-  public async me({ auth }: HttpContextContract) {
+  public async me({ auth, response }: HttpContextContract) {
     // TODO: Add a list of channels the user belongs to
-    return {
-      user: auth.user?.serialize(),
-      channels: [],
+    try {
+      if (!auth.user) {
+        return response.status(404).json({ message: 'User is not logged in.' })
+      }
+
+      const userWithChannels =
+        await User
+          .query()
+          .where('id', auth.user.id)
+          .preload('channels')
+          .first()
+      if (!userWithChannels) {
+        return response.status(404).json({ message: 'User does not exist.' })
+      }
+      return {
+        user: auth.user?.serialize(),
+        channels: userWithChannels.channels,
+      }
+    } catch (e) {
+      return response.status(404)
     }
   }
 }
