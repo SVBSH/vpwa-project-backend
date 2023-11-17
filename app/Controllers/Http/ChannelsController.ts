@@ -1,11 +1,24 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Channel from 'App/Models/Channel'
 import Message from 'App/Models/Message'
+import User from 'App/Models/User'
 
 export default class ChannelsController {
-  public async getChannels({ auth }: HttpContextContract) {
-    // console.log(auth)
-    return await Channel.all()
+  public async getChannels({ auth, response }: HttpContextContract) {
+    if (!auth.user) {
+      return response.status(404).json({ message: 'User does not exist.' })
+    }
+
+    const userWithChannels =
+      await User
+        .query()
+        .where('id', auth.user.id)
+        .preload('channels')
+        .first()
+    if (!userWithChannels) {
+      return response.status(404).json({ message: 'User does not exist.' })
+    }
+    return response.json(userWithChannels.channels)
   }
 
   public async getChannel({ response, params, auth }) {

@@ -10,13 +10,13 @@ export default class Message extends BaseModel {
   @column()
   public createdBy: number
 
-  @column()
+  @column({ serializeAs: null })
   public channelId: number
 
   @column()
   public content: string
 
-  @column.dateTime({ autoCreate: true })
+  @column.dateTime({ autoCreate: true, serializeAs: null })
   public createdAt: DateTime
 
   @belongsTo(() => User, {

@@ -1,6 +1,8 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import User from 'App/Models/User'
+import Channel from 'App/Models/Channel'
 import UpdateUserValidator from 'App/Validators/UpdateUserValidator'
+import ChannelsController from './ChannelsController'
 
 export default class AuthController {
   public async register({ request, auth }: HttpContextContract) {
@@ -21,11 +23,29 @@ export default class AuthController {
     return auth.use('api').logout()
   }
 
-  public async me({ auth }: HttpContextContract) {
+  public async me({ auth, response }: HttpContextContract) {
     // TODO: Add a list of channels the user belongs to
-    return {
-      user: auth.user?.serialize(),
-      channels: [],
+
+    try {
+      if (!auth.user) {
+        return response.status(404).json({ message: 'User does not exist.' })
+      }
+
+      const userWithChannels =
+        await User
+          .query()
+          .where('id', auth.user.id)
+          .preload('channels')
+          .first()
+      if (!userWithChannels) {
+        return response.status(404).json({ message: 'User does not exist.' })
+      }
+      return {
+        user: auth.user?.serialize(),
+        channels: userWithChannels.channels,
+      }
+    } catch (e) {
+      return response.status(404)
     }
   }
 }

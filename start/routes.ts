@@ -37,5 +37,5 @@ Route
     Route.get(':id', 'ChannelsController.getChannel')
     Route.get(':id/messages', 'ChannelsController.getChannelMessages')
   })
-  // .middleware('auth')
+  .middleware('auth')
   .prefix('channel')
