@@ -22,10 +22,10 @@ export default class ChannelsController {
   }
   /**
    * Pagination of messages in the channel.
-   * @param param0
+   * @param param
    * @returns
    */
-  public async getChannelMessages({ request, response, params, auth }) {
+  public async getChannelMessages({ request, response, params, auth }: HttpContextContract) {
     try {
       const lastId = parseInt(request.input('lastId', -1))
       const limit = 2

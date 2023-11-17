@@ -15,13 +15,30 @@
   },
   "preloads": [
     "./start/routes",
-    "./start/kernel"
+    "./start/kernel",
+    {
+      "file": "./start/wsKernel",
+      "environment": [
+        "web",
+        "test"
+      ],
+      "optional": true
+    },
+    {
+      "file": "./start/socket",
+      "environment": [
+        "web",
+        "test"
+      ],
+      "optional": true
+    }
   ],
   "providers": [
     "./providers/AppProvider",
     "@adonisjs/core",
     "@adonisjs/lucid",
-    "@adonisjs/auth"
+    "@adonisjs/auth",
+    "@ruby184/adonis-socket.io"
   ],
   "aceProviders": [
     "@adonisjs/repl"
@@ -39,5 +56,6 @@
   },
   "testProviders": [
     "@japa/preset-adonis/TestsProvider"
-  ]
+  ],
+  "wsExceptionHandlerNamespace": "App/Exceptions/WsHandler"
 }
