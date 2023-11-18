@@ -25,7 +25,7 @@ export default class AuthController {
     // TODO: Add a list of channels the user belongs to
     try {
       if (!auth.user) {
-        return response.status(404).json({ message: 'User is not logged in.' })
+        return response.status(401).json({ message: 'User is not logged in.' })
       }
 
       const userWithChannels =
@@ -42,7 +42,7 @@ export default class AuthController {
         channels: userWithChannels.channels,
       }
     } catch (e) {
-      return response.status(404)
+      return response.status(500).json({ message: 'An unexpected error occurred' })
     }
   }
 }
