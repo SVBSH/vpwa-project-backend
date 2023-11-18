@@ -1,5 +1,15 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column, computed, hasMany, HasMany, HasOne, hasOne } from '@ioc:Adonis/Lucid/Orm'
+import {
+  BaseModel,
+  BelongsTo,
+  belongsTo,
+  column,
+  computed,
+  hasMany,
+  HasMany,
+  ManyToMany,
+  manyToMany,
+} from '@ioc:Adonis/Lucid/Orm'
 import Message from './Message'
 import User from './User'
 
@@ -24,10 +34,15 @@ export default class Channel extends BaseModel {
   })
   public messages: HasMany<typeof Message>
 
-  @hasOne(() => User, {
+  @belongsTo(() => User, {
     foreignKey: 'channelAdmin',
   })
-  public admin: HasOne<typeof User>
+  public admin: BelongsTo<typeof User>
+
+  @manyToMany(() => User, {
+    pivotTable: 'channel_users', // name of the pivot table
+  })
+  public users: ManyToMany<typeof User>
 
   @computed()
   public get type() {
