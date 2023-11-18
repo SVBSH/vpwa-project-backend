@@ -40,9 +40,14 @@ export default class Channel extends BaseModel {
   public admin: BelongsTo<typeof User>
 
   @manyToMany(() => User, {
-    pivotTable: 'channel_users', // name of the pivot table
+    pivotTable: 'channel_users',
   })
   public users: ManyToMany<typeof User>
+
+  @manyToMany(() => User, {
+    pivotTable: 'banned_users',
+  })
+  public bannedMembers: ManyToMany<typeof User>
 
   @computed()
   public get type() {
