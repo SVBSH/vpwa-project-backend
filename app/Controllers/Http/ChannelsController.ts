@@ -3,7 +3,6 @@ import Channel from 'App/Models/Channel'
 import Message from 'App/Models/Message'
 import User from 'App/Models/User'
 import JoinChannelValidator from 'App/Validators/JoinChannelValidator'
-import QuitChannelValidator from 'App/Validators/QuitChannelValidator'
 
 export default class ChannelsController {
   public async getChannels({ auth, response }: HttpContextContract) {
