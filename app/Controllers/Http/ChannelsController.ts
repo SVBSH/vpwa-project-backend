@@ -96,10 +96,6 @@ export default class ChannelsController {
   }
 
   // TODO:
-  public async leave() {
-
-  }
-  // TODO:
   public async joinChannel({ auth, request, response }) {
     if (!auth.user) {
       return response.status(403).json({ message: 'Not authenticated' })
@@ -160,50 +156,68 @@ export default class ChannelsController {
    * the channel will be destroyed.
    */
   public async quitChannel({ auth, params, response }) {
-    if (!auth.user) {
-      return response.status(403).json({ message: 'Not authenticated' })
-    }
-
     try {
       let channelId = params.id
 
       if (isNaN(channelId)) {
-        return response.status(400).json({ message: 'Invalid channel ID' })
+        return response.status(400).json({ message: 'Invalid channel ID.' })
       }
       channelId = parseInt(channelId)
-
-      const channel = await Channel.find(channelId)
-      if (!channel) {
-        return response.status(404).json({ message: 'Channel not found' })
-      }
 
       const reqChannel = await Channel
         .query()
         .where('id', channelId)
         .first()
       if (!reqChannel) {
-        return response.status(404).json({ message: 'Requested channel does not exist' })
+        return response.status(404).json({ message: 'Requested channel does not exist.' })
       }
       // FIXME: reqChannel.channelAdmin is string ??
       const isAdmin = parseInt(reqChannel.channelAdmin) === parseInt(auth.user.id)
 
       if (!isAdmin) {
-        return response.status(403).json({ message: 'You do not have a permission to remove this channel' })
+        return response.status(403).json({ message: 'You do not have a permission to remove this channel.' })
       }
 
       await reqChannel.delete()
-      return response.json({ message: 'Channel removed successfully' })
+      return response.json({ message: 'Channel removed successfully.' })
     } catch (error) {
-      if (error.code === 'E_VALIDATION_FAILURE') {
-        const firstErrMessage = error.messages[0]
-        return response.status(422).json({
-          field: firstErrMessage,
-          message: firstErrMessage.message,
-        })
+      return response.status(500).send('An unexpected error occured.')
+    }
+  }
+
+  // TODO:
+  public async cancelChannel({ auth, params, response }) {
+    let channelId = params.id
+
+    if (isNaN(channelId)) {
+      return response.status(400).json({ message: 'Invalid channel ID.' })
+    }
+    channelId = parseInt(channelId)
+    try {
+      const reqChannel = await Channel
+        .query()
+        .preload('users')
+        .where('id', channelId)
+        .first()
+      if (!reqChannel) {
+        return response.status(404).json({ message: 'Requested channel does not exist.' })
       }
+      const isAdmin = parseInt(reqChannel.channelAdmin) === parseInt(auth.user.id)
+      if (isAdmin) {
+        await reqChannel.delete()
+        return response.json({ message: `Admin of the channel left the channel. The channel ${reqChannel.name} will be removed.` })
+      }
+
+      const isMember = reqChannel.users.find(user => user.id === auth.user.id)
+      if (!isMember) {
+        return response.status(403).json({ message: 'User is not a member of this channel.' })
+      }
+      await reqChannel.related('users').detach([auth.user.id])
+      return response.json({ message: `You were removed from channel ${reqChannel.name}.` })
+    } catch (error) {
       console.log(error)
 
-      return response.status(500).send('An unexpected error occured')
+      return response.status(500).send('An unexpected error occured.')
     }
   }
 }
