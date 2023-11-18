@@ -3,6 +3,7 @@ import Channel from 'App/Models/Channel'
 import Message from 'App/Models/Message'
 import User from 'App/Models/User'
 import JoinChannelValidator from 'App/Validators/JoinChannelValidator'
+import QuitChannelValidator from 'App/Validators/QuitChannelValidator'
 
 export default class ChannelsController {
   public async getChannels({ auth, response }: HttpContextContract) {
@@ -150,6 +151,58 @@ export default class ChannelsController {
           message: firstErrMessage.message,
         })
       }
+
+      return response.status(500).send('An unexpected error occured')
+    }
+  }
+
+  /**
+   * Allow admin of the channel to leave his channel. After that,
+   * the channel will be destroyed.
+   */
+  public async quitChannel({ auth, params, response }) {
+    if (!auth.user) {
+      return response.status(403).json({ message: 'Not authenticated' })
+    }
+
+    try {
+      let channelId = params.id
+
+      if (isNaN(channelId)) {
+        return response.status(400).json({ message: 'Invalid channel ID' })
+      }
+      channelId = parseInt(channelId)
+
+      const channel = await Channel.find(channelId)
+      if (!channel) {
+        return response.status(404).json({ message: 'Channel not found' })
+      }
+
+      const reqChannel = await Channel
+        .query()
+        .where('id', channelId)
+        .first()
+      if (!reqChannel) {
+        return response.status(404).json({ message: 'Requested channel does not exist' })
+      }
+      // FIXME: reqChannel.channelAdmin is string ??
+      const isAdmin = parseInt(reqChannel.channelAdmin) === parseInt(auth.user.id)
+
+      if (!isAdmin) {
+        return response.status(403).json({ message: 'You do not have a permission to remove this channel' })
+      }
+
+      await reqChannel.delete()
+      return response.json({ message: 'Channel removed successfully' })
+    } catch (error) {
+      if (error.code === 'E_VALIDATION_FAILURE') {
+        const firstErrMessage = error.messages[0]
+        return response.status(422).json({
+          field: firstErrMessage,
+          message: firstErrMessage.message,
+        })
+      }
+      console.log(error)
 
       return response.status(500).send('An unexpected error occured')
     }

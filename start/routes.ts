@@ -38,6 +38,7 @@ Route
     Route.get(':id/messages', 'ChannelsController.getChannelMessages')
     Route.get(':id/updateMessages', 'ChannelsController.getUpdatedChannelMessages')
     Route.post('join', 'ChannelsController.joinChannel')
+    Route.delete(':id/quit', 'ChannelsController.quitChannel')
   })
   .middleware('auth')
   .prefix('channel')
