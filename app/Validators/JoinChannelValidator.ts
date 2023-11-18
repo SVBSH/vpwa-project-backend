@@ -5,11 +5,12 @@ export default class JoinChannelValidator {
   constructor(protected ctx: HttpContextContract) { }
 
   public schema = schema.create({
-    channelName: schema.string([
-      rules.minLength(1),
-      rules.maxLength(50),
-      rules.trim(),
-    ]),
+    channelName: schema.string(
+      { trim: true },
+      [
+        rules.minLength(1),
+        rules.maxLength(50),
+      ]),
     isPublic: schema.boolean.optional(),
   })
 
