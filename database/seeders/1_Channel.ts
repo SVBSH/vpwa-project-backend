@@ -6,9 +6,16 @@ import Logger from '@ioc:Adonis/Core/Logger'
 export default class ChannelSeeder extends BaseSeeder {
   public async run() {
     const uniqueKey = 'name'
-    const channelAdmin = await User.findBy('nickname', 'foo')
-    if (!channelAdmin) {
+    const userFoo = await User.findBy('nickname', 'foo')
+
+    if (!userFoo) {
       Logger.warn('User <foo> not found. Seeder did not run.')
+      return
+    }
+
+    const userBar = await User.findBy('nickname', 'bar')
+    if (!userBar) {
+      Logger.warn('User <bar> not found. Seeder did not run.')
       return
     }
 
@@ -16,17 +23,17 @@ export default class ChannelSeeder extends BaseSeeder {
       {
         name: 'general',
         isPublic: false,
-        channelAdmin: channelAdmin.id,
+        channelAdmin: userFoo.id,
       },
       {
         name: 'Channel 1',
         isPublic: true,
-        channelAdmin: channelAdmin.id,
+        channelAdmin: userBar.id,
       },
       {
         name: 'Channel 2',
         isPublic: false,
-        channelAdmin: channelAdmin.id,
+        channelAdmin: userFoo.id,
       },
     ])
   }
