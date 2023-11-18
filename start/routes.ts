@@ -33,13 +33,13 @@ Route.group(() => {
 
 Route
   .group(() => {
-    Route.get('', 'ChannelsController.getChannels')
-    Route.get(':id', 'ChannelsController.getChannel')
-    Route.get(':id/messages', 'ChannelsController.getChannelMessages')
-    Route.get(':id/updateMessages', 'ChannelsController.getUpdatedChannelMessages')
-    Route.post('join', 'ChannelsController.joinChannel')
-    Route.delete(':id/quit', 'ChannelsController.quitChannel')
-    Route.delete(':id/cancel', 'ChannelsController.cancelChannel')
+    Route.get('/', 'ChannelsController.getChannels')
+    Route.get('/:id', 'ChannelsController.getChannel')
+    Route.get('/:id/messages', 'ChannelsController.getChannelMessages')
+    Route.get('/:id/updateMessages', 'ChannelsController.getUpdatedChannelMessages')
+    Route.post('/join', 'ChannelsController.joinChannel')
+    Route.delete('/:id/quit', 'ChannelsController.quitChannel')
+    Route.delete('/:id/cancel', 'ChannelsController.cancelChannel')
   })
-  .middleware('auth')
   .prefix('channel')
+  .middleware('auth')
