@@ -5,6 +5,10 @@ import User from 'App/Models/User'
 import JoinChannelValidator from 'App/Validators/JoinChannelValidator'
 
 export default class ChannelsController {
+  /**
+   * Get the list of channels that the authenticated user belongs to.
+   * @returns A JSON response with the list of channels.
+   */
   public async getChannels({ auth, response }: HttpContextContract) {
     if (!auth.user) {
       return response.status(403).json({ message: 'Not authenticated' })
@@ -23,11 +27,11 @@ export default class ChannelsController {
   }
 
   /**
-   *  Get channel with initial data
+   * Get channel with initial data
    * @param param.id Id of the Channel
    * @returns Channel
    */
-  public async getChannel({ response, params, auth }) {
+  public async getChannel({ response, params }) {
     try {
       const channel = await Channel
         .query()
@@ -49,7 +53,7 @@ export default class ChannelsController {
    * @param param.lastId Id of a last loaded message
    * @returns Channel messages older than provided message id
    */
-  public async getChannelMessages({ request, response, params, auth }: HttpContextContract) {
+  public async getChannelMessages({ request, response, params }: HttpContextContract) {
     try {
       const inputId = request.input('lastId', -1)
 
@@ -76,6 +80,7 @@ export default class ChannelsController {
   }
 
   /**
+   * Retrieves messages in a channel that are newer than a specified message ID.
    * @param params.lastId Id of a last loaded message
    * @returns Messages added since the last loaded message
    */
@@ -95,7 +100,16 @@ export default class ChannelsController {
     return response.json(newMessages)
   }
 
-  // TODO:
+  /**
+   * Allows an authenticated user to join a channel.
+   * If the channel does not exist, it is created.
+   *
+   * Also checks if the user is already a member of
+   * the channel, and if not, adds the user to the channel.
+   *
+   * If the user attempts to join a private channel and is not allowed, an error is returned.
+   * In the case of the channel not existing, it is created with the current user as the admin.
+   */
   public async joinChannel({ auth, request, response }) {
     if (!auth.user) {
       return response.status(403).json({ message: 'Not authenticated' })
@@ -126,7 +140,8 @@ export default class ChannelsController {
         return response.json({ message: `Channel ${payload.channelName} was created.` })
       }
 
-      const isMember = reqChannel.users.find(user => user.id === userId)
+      // check if the user is already a member of the channel
+      const isMember = reqChannel.users.some(user => user.id === userId)
       if (isMember) {
         return response.status(404).json({ message: 'You are already a member of this channel' })
       }
@@ -185,7 +200,13 @@ export default class ChannelsController {
     }
   }
 
-  // TODO:
+  /**
+  * Allows a user to leave a channel or an admin to delete the channel.
+  * If the user is an admin, the channel is deleted. Otherwise, the user
+  * is just removed from the channel.
+  * @param {number} params.id - The ID of the channel to leave or delete.
+  * @returns A JSON response with the result of the operation.
+  */
   public async cancelChannel({ auth, params, response }) {
     let channelId = params.id
 
@@ -205,15 +226,16 @@ export default class ChannelsController {
       const isAdmin = parseInt(reqChannel.channelAdmin) === parseInt(auth.user.id)
       if (isAdmin) {
         await reqChannel.delete()
-        return response.json({ message: `Admin of the channel left the channel. The channel ${reqChannel.name} will be removed.` })
+        return response.json({ message: `Channel ${reqChannel.name} has been removed as the admin left.` })
       }
 
-      const isMember = reqChannel.users.find(user => user.id === auth.user.id)
+      const isMember = reqChannel.users.some(user => user.id === auth.user.id)
       if (!isMember) {
-        return response.status(403).json({ message: 'User is not a member of this channel.' })
+        return response.status(403).json({ message: 'You are not a member of this channel.' })
       }
+
       await reqChannel.related('users').detach([auth.user.id])
-      return response.json({ message: `You were removed from channel ${reqChannel.name}.` })
+      return response.json({ message: `You have left channel ${reqChannel.name}.` })
     } catch (error) {
       console.log(error)
 
