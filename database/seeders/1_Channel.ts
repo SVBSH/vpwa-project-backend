@@ -20,7 +20,7 @@ export default class ChannelSeeder extends BaseSeeder {
       },
       {
         name: 'Channel 1',
-        isPublic: false,
+        isPublic: true,
         channelAdmin: channelAdmin.id,
       },
       {
