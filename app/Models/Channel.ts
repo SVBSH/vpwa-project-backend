@@ -45,7 +45,7 @@ export default class Channel extends BaseModel {
   public users: ManyToMany<typeof User>
 
   @manyToMany(() => User, {
-    pivotTable: 'banned_users',
+    pivotTable: 'channel_users_bans',
   })
   public bannedMembers: ManyToMany<typeof User>
 
