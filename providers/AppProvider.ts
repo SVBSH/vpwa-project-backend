@@ -6,6 +6,11 @@ export default class AppProvider {
 
   public register() {
     // Register your own bindings
+
+    this.app.container.singleton('Repositories/UserRepository', (container) => {
+      return container.make('App/Repositories/UserRepository')
+    })
+
     this.app.container.singleton('Repositories/ChannelRepository', (container) => {
       return container.make('App/Repositories/ChannelRepository')
     })
