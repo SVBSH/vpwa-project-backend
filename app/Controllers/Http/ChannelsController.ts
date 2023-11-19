@@ -3,8 +3,18 @@ import Channel from 'App/Models/Channel'
 import Message from 'App/Models/Message'
 import User from 'App/Models/User'
 import JoinChannelValidator from 'App/Validators/JoinChannelValidator'
+import ChannelService from 'App/Services/ChannelService'
+import { inject } from '@adonisjs/core/build/standalone'
+import { ChannelRepositoryContract } from '@ioc:Repositories/ChannelRepository'
+import { UserRepositoryContract } from '@ioc:Repositories/UserRepository'
 
+@inject(['Repositories/UserRepository', 'Repositories/ChannelRepository'])
 export default class ChannelsController {
+  constructor(
+    private UserRepository: UserRepositoryContract,
+    private ChannelRepository: ChannelRepositoryContract
+  ) { }
+
   /**
    * Get the list of channels that the authenticated user belongs to.
    * @returns A JSON response with the list of channels.
@@ -13,17 +23,12 @@ export default class ChannelsController {
     if (!auth.user) {
       return response.status(403).json({ message: 'Not authenticated' })
     }
-
-    const userWithChannels =
-      await User
-        .query()
-        .where('id', auth.user.id)
-        .preload('channels')
-        .first()
-    if (!userWithChannels) {
+    const user = await this.UserRepository.getUser(auth.user.id)
+    if (!user) {
       return response.status(404).json({ message: 'User does not exist.' })
     }
-    return response.json(userWithChannels.channels)
+    const userChannels = await this.ChannelRepository.getChannelsForUser(user)
+    return response.json(userChannels)
   }
 
   /**
@@ -31,17 +36,14 @@ export default class ChannelsController {
    * @param param.id Id of the Channel
    * @returns Channel
    */
-  public async getChannel({ response, params }) {
+  public async getChannel({ response, params }: HttpContextContract) {
     try {
-      const channel = await Channel
-        .query()
-        .where({ id: params.id })
-        .preload('messages', (messagesQuery) => {
-          messagesQuery.orderBy('id', 'desc')
-            .limit(2)
-        })
-        .preload('users')
-        .firstOrFail()
+      const channel = await this.ChannelRepository.getChannel(parseInt(params.id))
+      if (!channel) {
+        return response.status(404).json({ message: 'Channel not found' })
+      }
+      await this.ChannelRepository.getMessagesForChannel(channel)
+
       response.json(channel.serialize())
     } catch (e) {
       return response.status(404).json({ message: 'Channel not found' })
@@ -110,7 +112,7 @@ export default class ChannelsController {
    * If the user attempts to join a private channel and is not allowed, an error is returned.
    * In the case of the channel not existing, it is created with the current user as the admin.
    */
-  public async joinChannel({ auth, request, response }) {
+  public async joinChannel({ auth, request, response }: HttpContextContract) {
     if (!auth.user) {
       return response.status(403).json({ message: 'Not authenticated' })
     }
@@ -119,29 +121,23 @@ export default class ChannelsController {
       const userId = auth.user.id
       const payload = await request.validate(JoinChannelValidator)
 
-      const reqChannel = await Channel
-        .query()
-        .preload('users')
-        .where('name', payload.channelName)
-        .first()
+      const reqChannel = await this.ChannelRepository.getChannel(payload.channelName)
 
       // if channel exist create a new channel
       if (!reqChannel) {
-        const newChannel = await Channel.create({
-          channelAdmin: userId,
-          isPublic: payload.isPublic,
-          name: payload.channelName,
-        })
+        const newChannel = await this.ChannelRepository
+          .createChannel(userId, payload.channelName, payload.isPublic)
 
         if (!newChannel) {
           return response.status(500).send('An unexpected error occured')
         }
-        newChannel.related('users').attach([auth.user.id])
+
+        this.ChannelRepository.addUser(newChannel, auth.user.id)
         return response.json({ message: `Channel ${payload.channelName} was created.` })
       }
 
       // check if the user is already a member of the channel
-      const isMember = reqChannel.users.some(user => user.id === userId)
+      const isMember = await this.ChannelRepository.hasMember(reqChannel, userId)
       if (isMember) {
         return response.status(404).json({ message: 'You are already a member of this channel' })
       }
@@ -150,8 +146,8 @@ export default class ChannelsController {
       if (!reqChannel.isPublic) {
         return response.status(403).json({ message: 'You have no permission to join to private channel.' })
       }
-      // TODO: validate response
-      await reqChannel.related('users').attach([auth.user.id])
+
+      await this.ChannelRepository.addUser(reqChannel, auth.user.id)
       return response.json({ message: `You were added to channel ${payload.channelName}` })
     } catch (error) {
       if (error.code === 'E_VALIDATION_FAILURE') {
@@ -170,7 +166,11 @@ export default class ChannelsController {
    * Allow admin of the channel to leave his channel. After that,
    * the channel will be destroyed.
    */
-  public async quitChannel({ auth, params, response }) {
+  public async quitChannel({ auth, params, response }: HttpContextContract) {
+    if (!auth.user) {
+      return response.status(500).json({ message: 'Not authenticated' })
+    }
+
     try {
       let channelId = params.id
 
@@ -179,10 +179,7 @@ export default class ChannelsController {
       }
       channelId = parseInt(channelId)
 
-      const reqChannel = await Channel
-        .query()
-        .where('id', channelId)
-        .first()
+      const reqChannel = await this.ChannelRepository.getChannel(channelId)
       if (!reqChannel) {
         return response.status(404).json({ message: 'Requested channel does not exist.' })
       }
@@ -207,7 +204,7 @@ export default class ChannelsController {
   * @param {number} params.id - The ID of the channel to leave or delete.
   * @returns A JSON response with the result of the operation.
   */
-  public async cancelChannel({ auth, params, response }) {
+  public async cancelChannel({ auth, params, response }: HttpContextContract) {
     let channelId = params.id
 
     if (isNaN(channelId)) {
@@ -237,9 +234,103 @@ export default class ChannelsController {
       await reqChannel.related('users').detach([auth.user.id])
       return response.json({ message: `You have left channel ${reqChannel.name}.` })
     } catch (error) {
-      console.log(error)
-
       return response.status(500).send('An unexpected error occured.')
     }
+  }
+
+  /**
+   * Invite user to requested channel
+   */
+  public async invite({ auth, request, params, response }: HttpContextContract) {
+    const payload = request.all()
+    const channelId = payload.channelId
+    console.log()
+
+    if (!auth.user) {
+      return
+    }
+
+    if (isNaN(channelId)) {
+      console.log(channelId)
+      return response.status(400)
+    }
+
+    if (auth.user.nickname === payload.userNickname) {
+      return response.status(403).json({ message: 'You are already a member of this channel' })
+    }
+
+    try {
+      const invitedUserNickname = payload.userNickname
+      const invitedUser =
+        await User
+          .query()
+          .where('nickname', invitedUserNickname)
+          .first()
+
+      if (!invitedUser) {
+        return response
+          .status(404)
+          .json({ message: 'Invited user does not exist' })
+      }
+      const reqChannel =
+        await Channel
+          .query()
+          .where('id', channelId)
+          .first()
+      if (!reqChannel) {
+        return response
+          .status(404)
+          .json({ message: 'Invintation channel does not exist.' })
+      }
+
+      const isAlreadyMember = await ChannelService.checkUserInChannel(reqChannel.id, invitedUser.id)
+      if (isAlreadyMember) {
+        return response.status(403).json({ message: 'User is already a member of this channel.' })
+      }
+
+      const hostIsAdmin = this.ChannelRepository.isAdmin(reqChannel, auth.user.id)
+      if (!reqChannel.isPublic && !hostIsAdmin) {
+        return response
+          .status(403)
+          .json({ message: 'You do not have a permission to invite other users to this channel.' })
+      }
+
+      const guestBannedListQuery = reqChannel
+        .related('bannedMembers')
+        .pivotQuery()
+        .where('channel_id', reqChannel.id)
+        .andWhere('banned_user_id', invitedUser.id)
+
+      const guestBannedCount = await guestBannedListQuery
+        .count('* as total')
+        .first()
+      if (guestBannedCount.total > 1) {
+        if (!hostIsAdmin) {
+          return response.send(403).json({
+            message: 'This user is permanently banned from the requested channel. \
+              Only the Admin fo the channel has a permission to invite.',
+          })
+        }
+        // Clear the banned records
+        await guestBannedListQuery.delete()
+      }
+
+      const isAlreadyInvited = await ChannelService.checkUserIsInvited(channelId, invitedUser.id)
+
+      if (isAlreadyInvited) {
+        return response.status(403).json(
+          { message: `${invitedUser.nickname} was already invited to requested channel.` })
+      }
+      await this.ChannelRepository.addUser(reqChannel, invitedUser.id)
+      return response.json(
+        { message: `${invitedUser.nickname} was invited to the requested channel.` })
+    } catch (error) {
+      console.log(error)
+      return response.status(500).send('An unexpected error occured.')
+    }
+  }
+
+  // TODO: clear all invite records
+  public acceptInvintation({ auth, request, params, response }: HttpContextContract) {
   }
 }
