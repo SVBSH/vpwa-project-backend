@@ -12,7 +12,7 @@ export default class extends BaseSchema {
         .unsigned()
         .references('id')
         .inTable('users')
-        .onDelete('CASCADE')
+      // .onDelete('CASCADE')
 
       table
         .integer('channel_id')
