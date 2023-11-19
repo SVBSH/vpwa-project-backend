@@ -1,8 +1,8 @@
 import BaseSeeder from '@ioc:Adonis/Lucid/Seeder'
 import Logger from '@ioc:Adonis/Core/Logger'
-
 import Channel from 'App/Models/Channel'
 import User from 'App/Models/User'
+import Ban from 'App/Models/Ban'
 
 export default class extends BaseSeeder {
   public async run() {
@@ -11,26 +11,28 @@ export default class extends BaseSeeder {
     const userBaz = await User.findBy('nickname', 'baz')
 
     if (!userFoo || !userBar || !userBaz) {
-      Logger.warn('Users <foo> or <bar> or <baz> not found. Seeder did not run.')
+      Logger.warn('One or more users not found. Seeder did not run.')
       return
     }
 
-    const channel2 = await Channel.findBy('name', 'Channel 1')
-    if (!channel2) {
-      Logger.warn('Channel <Channel 2> not found. Seeder did not run.')
+    const channelGeneral = await Channel.findBy('name', 'general')
+    const channelChannel1 = await Channel.findBy('name', 'Channel 1')
+
+    if (!channelGeneral || !channelChannel1) {
+      Logger.warn('Channel <Channel 1> not found. Seeder did not run.')
       return
     }
 
-    await channel2.related('bannedMembers').attach({
-      [userFoo.id]: {
-        banned_user_id: userBar.id,
-      },
+    await Ban.create({
+      channelId: channelGeneral.id,
+      bannedById: userFoo.id,
+      bannedUserId: userBar.id,
     })
 
-    await channel2.related('bannedMembers').attach({
-      [userFoo.id]: {
-        banned_user_id: userBaz.id,
-      },
+    await Ban.create({
+      channelId: channelChannel1.id,
+      bannedById: userFoo.id,
+      bannedUserId: userBaz.id,
     })
   }
 }
