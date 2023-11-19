@@ -6,12 +6,13 @@ declare module '@ioc:Repositories/ChannelRepository' {
   export interface ChannelRepositoryContract {
     getChannelsForUser(user: User): Promise<Channel[]>
     getBannedUsers(channel: Channel): Promise<User[]>
+    removeUser(channel: Channel, userId: number): void
     addUser(channel: Channel, userId: number): Promise<void>
-    getChannel(identifier: string | number): Promise<Channel | null>
-    getMessagesForChannel(channel: Channel)
+    getChannel(identifier: string | number): Promise<Channel>
+    getMessagesForChannel(channel: Channel): void
     createChannel(adminId: number, channelName: string, isPublic?: boolean): Promise<Channel>
     hasMember(channel: Channel, userId: number): Promise<boolean>
-    isAdmin(channel: Channel, userId: number): boolean
+    isAdmin(channel: Channel, userId: number): Promise<boolean>
   }
 
   const ChannelRepository: ChannelRepositoryContract
@@ -23,7 +24,7 @@ declare module '@ioc:Repositories/UserRepository' {
   import Channel from 'App/Models/Channel'
 
   export interface UserRepositoryContract {
-    getUser(identifier: string | number): Promise<User | null>
+    getUser(identifier: string | number): Promise<User>
     getUsersForChannel(channel: Channel): Promise<User[]>
   }
 
