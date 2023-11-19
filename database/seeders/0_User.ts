@@ -7,6 +7,7 @@ export default class extends BaseSeeder {
       { nickname: 'foo', name: 'Jano', surname: 'Foo', password: '12345', state: 'offline', email: 'foo@example.com' },
       { nickname: 'bar', name: 'Ondro', surname: 'Bar', password: '12345', state: 'online', email: 'bar@example.com' },
       { nickname: 'baz', name: 'Jano', surname: 'Baz', password: '12345', state: 'dnd', email: 'baz@example.com' },
+      { nickname: 'svt', name: 'Svato', surname: 'Put', password: '12345', state: 'online', email: 'svpu@example.com' },
     ])
   }
 }
