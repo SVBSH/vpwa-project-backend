@@ -29,7 +29,7 @@ export default class extends BaseSchema {
         .notNullable()
         .references('id')
         .inTable('users')
-        .onDelete('CASCADE')
+      // .onDelete('CASCADE')
 
       table
         .timestamp('banned_at', { useTz: true })
