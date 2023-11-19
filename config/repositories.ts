@@ -20,9 +20,11 @@ declare module '@ioc:Repositories/ChannelRepository' {
 
 declare module '@ioc:Repositories/UserRepository' {
   import User from 'App/Models/User'
+  import Channel from 'App/Models/Channel'
 
   export interface UserRepositoryContract {
     getUser(identifier: string | number): Promise<User | null>
+    getUsersForChannel(channel: Channel): Promise<User[]>
   }
 
   const UserRepository: UserRepositoryContract
