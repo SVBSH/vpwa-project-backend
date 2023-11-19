@@ -8,14 +8,6 @@ export default class extends BaseSchema {
       table.increments('id')
 
       table
-        .integer('user_id')
-        .unsigned()
-        .notNullable()
-        .references('id')
-        .inTable('users')
-        .onDelete('CASCADE')
-
-      table
         .integer('channel_id')
         .unsigned()
         .notNullable()
@@ -24,7 +16,7 @@ export default class extends BaseSchema {
         .onDelete('CASCADE')
 
       table
-        .integer('banned_by')
+        .integer('banned_by_id')
         .unsigned()
         .notNullable()
         .references('id')
@@ -32,10 +24,18 @@ export default class extends BaseSchema {
       // .onDelete('CASCADE')
 
       table
+        .integer('banned_user_id')
+        .unsigned()
+        .notNullable()
+        .references('id')
+        .inTable('users')
+        .onDelete('CASCADE')
+
+      table
         .timestamp('banned_at', { useTz: true })
         .defaultTo(this.now())
 
-      table.unique(['user_id', 'channel_id', 'banned_by'])
+      table.unique(['banned_user_id', 'channel_id', 'banned_by_id'])
     })
   }
 

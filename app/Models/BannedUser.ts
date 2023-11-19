@@ -10,19 +10,19 @@ export default class BannedUser extends BaseModel {
   public id: number
 
   @column()
-  public userId: number
+  public bannedUserId: number
 
   @column()
   public channelId: number
 
   @column()
-  public bannedBy: number
+  public bannedById: number
 
   @column.dateTime({ autoCreate: true })
   public bannedAt: DateTime
 
   @belongsTo(() => User, {
-    foreignKey: 'userId',
+    foreignKey: 'bannedUserId',
   })
   public user: BelongsTo<typeof User>
 
@@ -32,7 +32,7 @@ export default class BannedUser extends BaseModel {
   public channel: BelongsTo<typeof Channel>
 
   @belongsTo(() => User, {
-    foreignKey: 'bannedBy',
+    foreignKey: 'bannedById',
   })
   public banner: BelongsTo<typeof User>
 }

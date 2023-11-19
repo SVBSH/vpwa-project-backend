@@ -23,13 +23,13 @@ export default class extends BaseSeeder {
 
     await channel2.related('bannedMembers').attach({
       [userFoo.id]: {
-        banned_by: userBar.id,
+        banned_user_id: userBar.id,
       },
     })
 
     await channel2.related('bannedMembers').attach({
       [userFoo.id]: {
-        banned_by: userBaz.id,
+        banned_user_id: userBaz.id,
       },
     })
   }
