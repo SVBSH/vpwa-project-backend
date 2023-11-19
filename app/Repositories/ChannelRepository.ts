@@ -10,7 +10,7 @@ export default class ChannelRepository implements ChannelRepositoryContract {
 
   public async getMessagesForChannel(channel: Channel) {
     const messages = await channel.load('messages', (messagesQuery) => {
-      messagesQuery.orderBy('id', 'desc')
+      messagesQuery.preload('author').orderBy('id', 'desc')
         .limit(2)
     })
     return messages
@@ -50,14 +50,31 @@ export default class ChannelRepository implements ChannelRepositoryContract {
   }
 
   public async hasMember(channel: Channel, userId: number) {
-    return !!(await channel
+    return (await channel
       .related('users')
       .pivotQuery()
       .where('id', userId)
-      .first())
+      .first()) === null
+  }
+
+  public hasMemberBanned(channel: Channel, memberId: number) {
+    // const guestBannedListQuery = channel
+    //   .related('bannedMembers')
+    //   .pivotQuery()
+    //   // .where('channel_id', reqChannel.id)
+    //   .andWhere('banned_user_id', memberId)
+
+    // const guestBannedCount = await guestBannedListQuery
+    //   .count('* as total')
+    //   .first()
+    // if (guestBannedCount.total > 1) {
   }
 
   public isAdmin(channel: Channel, userId: number) {
     return channel.admin.id === userId
+  }
+
+  public getAdmin(channel: Channel) {
+    return channel.related('admin')
   }
 }
