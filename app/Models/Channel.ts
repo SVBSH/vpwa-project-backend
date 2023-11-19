@@ -12,6 +12,7 @@ import {
 } from '@ioc:Adonis/Lucid/Orm'
 import Message from './Message'
 import User from './User'
+import Ban from './Ban'
 
 export default class Channel extends BaseModel {
   @column({ isPrimary: true })
@@ -44,12 +45,10 @@ export default class Channel extends BaseModel {
   })
   public users: ManyToMany<typeof User>
 
-  @manyToMany(() => User, {
-    pivotTable: 'channel_users_bans',
-    pivotForeignKey: 'banned_by_id',
-    pivotRelatedForeignKey: 'channel_id',
+  @hasMany(() => Ban, {
+    foreignKey: 'channelId',
   })
-  public bannedMembers: ManyToMany<typeof User>
+  public bans: HasMany<typeof Ban>
 
   @computed()
   public get type() {
