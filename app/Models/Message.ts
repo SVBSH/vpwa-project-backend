@@ -21,6 +21,7 @@ export default class Message extends BaseModel {
 
   @belongsTo(() => User, {
     foreignKey: 'createdBy',
+    serializeAs: 'user',
   })
   public author: BelongsTo<typeof User>
 
