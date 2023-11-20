@@ -35,7 +35,7 @@ Route
   .group(() => {
     Route.get('/', 'ChannelsController.getChannels')
     Route.get('/:id', 'ChannelsController.getChannel')
-    Route.get('/:id/messages', 'ChannelsController.getChannelMessages')
+    Route.get('/:id/messages', 'ChannelsController.getChannelMessageRange')
     Route.get('/:id/updateMessages', 'ChannelsController.getUpdatedChannelMessages')
     Route.post('/join', 'ChannelsController.joinChannel')
     Route.post('/invite', 'ChannelsController.invite')
