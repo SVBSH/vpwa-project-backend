@@ -46,3 +46,10 @@ Route
   })
   .prefix('channel')
   .middleware('auth')
+
+Route
+  .group(() => {
+    Route.post('/state', 'UsersController.setState')
+  })
+  .prefix('user')
+  .middleware('auth')

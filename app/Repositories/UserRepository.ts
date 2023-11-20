@@ -1,8 +1,10 @@
-import { Exception } from '@adonisjs/core/build/standalone'
+import { Exception, inject } from '@adonisjs/core/build/standalone'
 import { UserRepositoryContract } from '@ioc:Repositories/UserRepository'
+import { UserEventRouterContract } from '@ioc:Services/UserEventRouter'
 import Channel from 'App/Models/Channel'
-import User from 'App/Models/User'
+import User, { UserState } from 'App/Models/User'
 
+@inject(['Services/UserEventRouter'])
 export default class UserRepository implements UserRepositoryContract {
   public async getUsersForChannel(channel: Channel) {
     await channel.load('users')
@@ -25,4 +27,15 @@ export default class UserRepository implements UserRepositoryContract {
       throw new Exception('This user is not a member of this channel.', 404)
     }
   }
+
+  public async setUserState(user: User, state: UserState) {
+    user.state = state
+    await user.save()
+    this.UserEventRouter.toUserRooms(user).emit('user_state', { user: user.id, state })
+    this.UserEventRouter.toUser(user).emit('user_state', { user: user.id, state })
+  }
+
+  constructor(
+    private UserEventRouter: UserEventRouterContract
+  ) { }
 }
