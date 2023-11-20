@@ -1,9 +1,9 @@
 import { inject } from '@adonisjs/core/build/standalone'
 import Logger from '@ioc:Adonis/Core/Logger'
-import { ChannelRepositoryContract } from '@ioc:Repositories/ChannelRepository'
 import { WsContract } from '@ioc:Ruby184/Socket.IO/Ws'
 import { WsSocket } from '@ioc:Ruby184/Socket.IO/WsContext'
 import { SocketOperator, UserEventRouterContract } from '@ioc:Services/UserEventRouter'
+import Channel from 'App/Models/Channel'
 import User from 'App/Models/User'
 
 interface UserInfo {
@@ -11,13 +11,14 @@ interface UserInfo {
   sockets: Set<WsSocket>
 }
 
-@inject(['Repositories/ChannelRepository', 'Ruby184/Socket.IO/Ws'])
+@inject(['Ruby184/Socket.IO/Ws'])
 export default class UserEventRouter implements UserEventRouterContract {
   private users = new Map<number, UserInfo>()
 
   public async updateUserInfo(user: User) {
     const id = user.id
-    const channels = await this.ChannelRepository.getChannelsForUser(user)
+    await user.load('channels')
+    const channels = user.channels
     const expectedChannelRooms = new Set(channels.map(v => `channel:${v.id}`))
 
     let info = this.users.get(id)
@@ -57,6 +58,7 @@ export default class UserEventRouter implements UserEventRouterContract {
     if (!info.sockets.has(socket)) {
       info.sockets.add(socket)
       Logger.info('User "%s" connected (%s connections)', user.id, info.sockets.size)
+      socket.join(`user:${id}`)
 
       for (const room of info.rooms) {
         socket.join(room)
@@ -86,8 +88,15 @@ export default class UserEventRouter implements UserEventRouterContract {
     return operator
   }
 
+  public toUser(user: User) {
+    return this.Ws.io.to(`user:${user.id}`) as SocketOperator
+  }
+
+  public toChannel(channel: Channel) {
+    return this.Ws.io.to(`channel:${channel.id}`) as SocketOperator
+  }
+
   constructor(
-    private ChannelRepository: ChannelRepositoryContract,
     private Ws: WsContract
   ) { }
 }

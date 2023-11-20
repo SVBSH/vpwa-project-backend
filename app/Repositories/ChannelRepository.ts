@@ -1,8 +1,10 @@
-import { Exception } from '@adonisjs/core/build/standalone'
+import { Exception, inject } from '@adonisjs/core/build/standalone'
 import { ChannelRepositoryContract } from '@ioc:Repositories/ChannelRepository'
+import { UserEventRouterContract } from '@ioc:Services/UserEventRouter'
 import Channel from 'App/Models/Channel'
 import User from 'App/Models/User'
 
+@inject(['Services/UserEventRouter'])
 export default class ChannelRepository implements ChannelRepositoryContract {
   public async getChannelsForUser(user: User) {
     await user.load('channels')
@@ -11,7 +13,7 @@ export default class ChannelRepository implements ChannelRepositoryContract {
 
   public async getMessagesForChannel(channel: Channel) {
     await channel.load('messages', (messagesQuery) => {
-      messagesQuery.preload('author').orderBy('id', 'desc')
+      messagesQuery.preload('author').orderBy('id', 'asc')
     })
 
     return channel.messages
@@ -50,12 +52,32 @@ export default class ChannelRepository implements ChannelRepositoryContract {
     })
   }
 
-  public async addUser(channel: Channel, userId: number) {
-    return await channel.related('users').attach([userId])
+  public async deleteChannel(channel: Channel): Promise<void> {
+    await channel.load('users')
+    const users = [...channel.users]
+    await channel.delete()
+
+    const queue = users.map(async (user) => {
+      await this.UserEventRouter.updateUserInfo(user)
+      this.UserEventRouter.toUser(user).emit('channel_remove', channel.id)
+    })
+
+    await Promise.all(queue)
   }
 
-  public async removeUser(channel: Channel, userId: number) {
-    await channel.related('users').detach([userId])
+  public async addUser(channel: Channel, user: User) {
+    await channel.related('users').attach([user.id])
+    await this.UserEventRouter.updateUserInfo(user)
+    await channel.load('users')
+    this.UserEventRouter.toChannel(channel).emit('user_add', { channel: channel.id, user: user.serialize() })
+    this.UserEventRouter.toUser(user).emit('channel_add', channel.serialize())
+  }
+
+  public async removeUser(channel: Channel, user: User) {
+    await channel.related('users').detach([user.id])
+    await this.UserEventRouter.updateUserInfo(user)
+    this.UserEventRouter.toChannel(channel).emit('user_remove', { channel: channel.id, user: user.id })
+    this.UserEventRouter.toUser(user).emit('channel_remove', channel.id)
   }
 
   public async hasMember(channel: Channel, userId: number) {
@@ -88,4 +110,8 @@ export default class ChannelRepository implements ChannelRepositoryContract {
   public getAdmin(channel: Channel) {
     return channel.related('admin')
   }
+
+  constructor(
+    private UserEventRouter: UserEventRouterContract
+  ) { }
 }

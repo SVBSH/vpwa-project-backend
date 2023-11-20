@@ -155,7 +155,7 @@ export default class ChannelsController {
           })
       }
 
-      await this.ChannelRepository.addUser(reqChannel, auth.user.id)
+      await this.ChannelRepository.addUser(reqChannel, auth.user)
       return response.json(
         { message: `You were added to channel ${payload.channelName}` })
     } catch (error) {
@@ -175,7 +175,7 @@ export default class ChannelsController {
           return response.status(500).send('An unexpected error occured')
         }
 
-        this.ChannelRepository.addUser(newChannel, auth.user.id)
+        this.ChannelRepository.addUser(newChannel, auth.user)
         return response.json({ message: `Channel ${payload.channelName} was created.` })
       }
       console.log(error.message)
@@ -207,7 +207,7 @@ export default class ChannelsController {
         return response.status(403).json({ message: 'You do not have a permission to remove this channel.' })
       }
 
-      await reqChannel.delete()
+      await this.ChannelRepository.deleteChannel(reqChannel)
       return response.json({ message: 'Channel removed successfully.' })
     } catch (error) {
       return response
@@ -241,7 +241,7 @@ export default class ChannelsController {
 
       const isAdmin = await this.ChannelRepository.isAdmin(reqChannel, auth.user.id)
       if (isAdmin) {
-        await reqChannel.delete()
+        await this.ChannelRepository.deleteChannel(reqChannel)
         return response
           .json({ message: `Channel ${reqChannel.name} has been removed as the admin left.` })
       }
@@ -253,7 +253,7 @@ export default class ChannelsController {
           .json({ message: 'You are not a member of this channel.' })
       }
 
-      this.ChannelRepository.removeUser(reqChannel, auth.user.id)
+      this.ChannelRepository.removeUser(reqChannel, auth.user)
       return response.json({ message: `You have left the channel ${reqChannel.name}.` })
     } catch (error) {
       console.log(error.message)
@@ -306,7 +306,7 @@ export default class ChannelsController {
           .where('bannedUserId', invitedUser.id)
           .andWhere('channelId', reqChannel.id)
           .delete()
-        await this.ChannelRepository.addUser(reqChannel, invitedUser.id)
+        await this.ChannelRepository.addUser(reqChannel, invitedUser)
         return response.json({ message: 'clearing the bans and inviting user to the channel' })
       }
 
@@ -328,7 +328,7 @@ export default class ChannelsController {
         })
       }
 
-      await this.ChannelRepository.addUser(reqChannel, invitedUser.id)
+      await this.ChannelRepository.addUser(reqChannel, invitedUser)
       return response.json(
         { message: `${invitedUser.nickname} was invited to the requested channel.` })
     } catch (error) {
@@ -370,7 +370,7 @@ export default class ChannelsController {
           .json({ message: `You do not have a permission to revoke ${targetUserName}.` })
       }
 
-      this.ChannelRepository.removeUser(reqChannel, targetUser.id)
+      this.ChannelRepository.removeUser(reqChannel, targetUser)
       return response.json({ message: `User "${targetUser.nickname}" will be removed from "${reqChannel.name}"` })
     } catch (error) {
       // console.log(error.message)
@@ -405,7 +405,7 @@ export default class ChannelsController {
       const isAdmin = await this.ChannelRepository.isAdmin(reqChannel, auth.user.id)
 
       if (isAdmin || isBanned) {
-        this.ChannelRepository.removeUser(reqChannel, targetUser.id)
+        this.ChannelRepository.removeUser(reqChannel, targetUser)
         return response.json(
           { message: `User ${targetUser.nickname} is permanently banned from this channel.` })
       }
