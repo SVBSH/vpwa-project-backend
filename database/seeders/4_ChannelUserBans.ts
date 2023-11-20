@@ -1,45 +1,31 @@
-import BaseSeeder from '@ioc:Adonis/Lucid/Seeder'
+import { faker } from '@faker-js/faker'
 import Logger from '@ioc:Adonis/Core/Logger'
+import BaseSeeder from '@ioc:Adonis/Lucid/Seeder'
+import Ban from 'App/Models/Ban'
 import Channel from 'App/Models/Channel'
 import User from 'App/Models/User'
-import Ban from 'App/Models/Ban'
 
 export default class extends BaseSeeder {
   public async run() {
-    const userFoo = await User.findBy('nickname', 'foo')
-    const userBar = await User.findBy('nickname', 'bar')
-    const userBaz = await User.findBy('nickname', 'baz')
+    const channels = await Channel.query().preload('users').select()
 
-    if (!userFoo || !userBar || !userBaz) {
-      Logger.warn('One or more users not found. Seeder did not run.')
-      return
+    faker.seed(4)
+    const targetChannel = faker.helpers.arrayElement(channels.filter(v => v.type === 'public' && v.users.length >= 4))
+    const pool = new Set<User>(targetChannel.users)
+    const targetUser = faker.helpers.arrayElement([...pool])
+    pool.delete(targetUser)
+
+    for (let i = 0; i < 3; i++) {
+      const banner = faker.helpers.arrayElement([...pool])
+      pool.delete(banner)
+      await Ban.create({
+        channelId: targetChannel.id,
+        bannedById: banner.id,
+        bannedUserId: targetUser.id,
+      })
     }
 
-    const channelGeneral = await Channel.findBy('name', 'general')
-    const channelChannel1 = await Channel.findBy('name', 'Channel 1')
-    const channelChannel2 = await Channel.findBy('name', 'Channel 2')
-
-    if (!channelGeneral || !channelChannel1 || !channelChannel2) {
-      Logger.warn('Channel <Channel 1> not found. Seeder did not run.')
-      return
-    }
-
-    await Ban.create({
-      channelId: channelGeneral.id,
-      bannedById: userFoo.id,
-      bannedUserId: userBar.id,
-    })
-
-    await Ban.create({
-      channelId: channelChannel2.id,
-      bannedById: userFoo.id,
-      bannedUserId: userBaz.id,
-    })
-
-    await Ban.create({
-      channelId: channelChannel1.id,
-      bannedById: userBar.id,
-      bannedUserId: userBaz.id,
-    })
+    await targetChannel.related('users').detach([targetUser.id])
+    Logger.info('Banned user %s in channel %s', targetUser.nickname, targetChannel.name)
   }
 }

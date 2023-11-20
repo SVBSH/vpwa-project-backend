@@ -1,13 +1,17 @@
+import { faker } from '@faker-js/faker'
 import BaseSeeder from '@ioc:Adonis/Lucid/Seeder'
-import User from 'App/Models/User'
+import User, { USER_STATE } from 'App/Models/User'
 
 export default class extends BaseSeeder {
   public async run() {
-    await User.updateOrCreateMany('nickname', [
-      { nickname: 'foo', name: 'Jano', surname: 'Foo', password: '12345', state: 'offline', email: 'foo@example.com' },
-      { nickname: 'bar', name: 'Ondro', surname: 'Bar', password: '12345', state: 'online', email: 'bar@example.com' },
-      { nickname: 'baz', name: 'Jano', surname: 'Baz', password: '12345', state: 'dnd', email: 'baz@example.com' },
-      { nickname: 'svt', name: 'Svato', surname: 'Put', password: '12345', state: 'online', email: 'svpu@example.com' },
-    ])
+    faker.seed(0)
+    await User.updateOrCreateMany('nickname', Array.from({ length: 10 }, () => ({
+      nickname: faker.word.noun(),
+      name: faker.person.firstName(),
+      surname: faker.person.lastName(),
+      email: faker.internet.email(),
+      password: '12345',
+      state: faker.helpers.arrayElement(USER_STATE),
+    })))
   }
 }

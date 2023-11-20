@@ -1,45 +1,21 @@
+import { faker } from '@faker-js/faker'
 import BaseSeeder from '@ioc:Adonis/Lucid/Seeder'
 import Channel from 'App/Models/Channel'
 import User from 'App/Models/User'
-import Logger from '@ioc:Adonis/Core/Logger'
 
 export default class ChannelSeeder extends BaseSeeder {
   public async run() {
-    const uniqueKey = 'name'
-    const userFoo = await User.findBy('nickname', 'foo')
+    const users = await User.all()
 
-    if (!userFoo) {
-      Logger.warn('User <foo> not found. Seeder did not run.')
-      return
-    }
+    faker.seed(1)
+    await Channel.updateOrCreateMany('name', Array.from({ length: 10 }, () => {
+      const admin = faker.helpers.arrayElement(users)
 
-    const userBar = await User.findBy('nickname', 'bar')
-    if (!userBar) {
-      Logger.warn('User <bar> not found. Seeder did not run.')
-      return
-    }
-
-    await Channel.updateOrCreateMany(uniqueKey, [
-      {
-        name: 'general',
-        isPublic: false,
-        channelAdmin: userFoo.id,
-      },
-      {
-        name: 'Channel 1',
-        isPublic: true,
-        channelAdmin: userBar.id,
-      },
-      {
-        name: 'Channel 2',
-        isPublic: true,
-        channelAdmin: userFoo.id,
-      },
-      {
-        name: 'Channel 3',
-        isPublic: false,
-        channelAdmin: userFoo.id,
-      },
-    ])
+      return {
+        channelAdmin: admin.id,
+        name: faker.word.noun(),
+        isPublic: faker.datatype.boolean(),
+      }
+    }))
   }
 }
