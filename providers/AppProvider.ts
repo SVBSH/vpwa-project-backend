@@ -19,6 +19,10 @@ export default class AppProvider {
       return container.make('App/Repositories/MessageRepository')
     })
 
+    this.app.container.singleton('Repositories/BanRepository', (container) => {
+      return container.make('App/Repositories/BanRepository')
+    })
+
     this.app.container.singleton('Services/UserEventRouter', (container) => {
       return container.make('App/Services/UserEventRouter')
     })

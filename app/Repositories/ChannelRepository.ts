@@ -10,17 +10,17 @@ export default class ChannelRepository implements ChannelRepositoryContract {
   }
 
   public async getMessagesForChannel(channel: Channel) {
-    const messages = await channel.load('messages', (messagesQuery) => {
+    await channel.load('messages', (messagesQuery) => {
       messagesQuery.preload('author').orderBy('id', 'desc')
-        .limit(2)
     })
-    return messages
+
+    return channel.messages
   }
 
   public async getBannedUsers(channel: Channel) {
     //TODO:
-    await channel.load('bannedMembers')
-    return channel.bannedMembers
+    await channel.load('bans')
+    return channel.bans
   }
 
   public async getChannel(identifier: string | number) {

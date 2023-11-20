@@ -17,8 +17,9 @@ export default class extends BaseSeeder {
 
     const channelGeneral = await Channel.findBy('name', 'general')
     const channelChannel1 = await Channel.findBy('name', 'Channel 1')
+    const channelChannel2 = await Channel.findBy('name', 'Channel 2')
 
-    if (!channelGeneral || !channelChannel1) {
+    if (!channelGeneral || !channelChannel1 || !channelChannel2) {
       Logger.warn('Channel <Channel 1> not found. Seeder did not run.')
       return
     }
@@ -30,8 +31,14 @@ export default class extends BaseSeeder {
     })
 
     await Ban.create({
-      channelId: channelChannel1.id,
+      channelId: channelChannel2.id,
       bannedById: userFoo.id,
+      bannedUserId: userBaz.id,
+    })
+
+    await Ban.create({
+      channelId: channelChannel1.id,
+      bannedById: userBar.id,
       bannedUserId: userBaz.id,
     })
   }

@@ -2,10 +2,10 @@
 declare module '@ioc:Repositories/ChannelRepository' {
   import Channel from 'App/Models/Channel'
   import User from 'App/Models/User'
-
+  import Ban from 'App/Models/Ban'
   export interface ChannelRepositoryContract {
     getChannelsForUser(user: User): Promise<Channel[]>
-    getBannedUsers(channel: Channel): Promise<User[]>
+    getBannedUsers(channel: Channel): Promise<Ban[]>
     removeUser(channel: Channel, userId: number): void
     addUser(channel: Channel, userId: number): Promise<void>
     getChannel(identifier: string | number): Promise<Channel>
@@ -52,4 +52,17 @@ declare module '@ioc:Repositories/MessageRepository' {
 
   const MessageRepository: MessageRepositoryContract
   export default MessageRepository
+}
+
+declare module '@ioc:Repositories/BanRepository' {
+  import User from 'App/Models/User'
+  import Channel from 'App/Models/Channel'
+
+  export interface BanRepositoryContract {
+    banUser(channel: Channel, banInitiator: number, targetUser: User): void
+    getBanCount(user: User, channelId: number): Promise<number>
+    isBanned(user: User, channel: Channel): Promise<boolean>
+  }
+  const BanRepository: BanRepositoryContract
+  export default BanRepository
 }

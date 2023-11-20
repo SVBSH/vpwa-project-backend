@@ -6,12 +6,17 @@ import { ChannelRepositoryContract } from '@ioc:Repositories/ChannelRepository'
 import { UserRepositoryContract } from '@ioc:Repositories/UserRepository'
 import Channel from 'App/Models/Channel'
 import Ban from 'App/Models/Ban'
+import { BanRepositoryContract } from '@ioc:Repositories/BanRepository'
 
-@inject(['Repositories/UserRepository', 'Repositories/ChannelRepository'])
+@inject([
+  'Repositories/UserRepository',
+  'Repositories/ChannelRepository',
+  'Repositories/BanRepository'])
 export default class ChannelsController {
   constructor(
     private UserRepository: UserRepositoryContract,
-    private ChannelRepository: ChannelRepositoryContract
+    private ChannelRepository: ChannelRepositoryContract,
+    private BanRepository: BanRepositoryContract
   ) { }
 
   /**
@@ -35,7 +40,6 @@ export default class ChannelsController {
 
   /**
    * Get channel with initial data
-   * @param param.id Id of the Channel
    * @returns Channel
    */
   public async getChannel({ auth, response, params }: HttpContextContract) {
@@ -45,7 +49,7 @@ export default class ChannelsController {
 
     try {
       const channel = await this.ChannelRepository.getChannel(parseInt(params.id))
-      this.ChannelRepository.getMessagesForChannel(channel)
+      await this.ChannelRepository.getMessagesForChannel(channel)
       await this.UserRepository.getUsersForChannel(channel)
       response.json(channel.serialize())
     } catch (error) {
@@ -55,7 +59,6 @@ export default class ChannelsController {
 
   /**
    * Pagination of messages in the channel.
-   * @param param.lastId Id of a last loaded message
    * @returns Channel messages older than provided message id
    */
   public async getChannelMessageRange({ request, response, params }: HttpContextContract) {
@@ -89,7 +92,6 @@ export default class ChannelsController {
 
   /**
    * Retrieves messages in a channel that are newer than a specified message ID.
-   * @param params.lastId Id of a last loaded message
    * @returns Messages added since the last loaded message
    */
   public async getUpdatedChannelMessages({ request, response, params }: HttpContextContract) {
@@ -141,6 +143,18 @@ export default class ChannelsController {
           .json({ message: 'You have no permission to join to private channel.' })
       }
 
+      const userIsBanned = await this.BanRepository.isBanned(auth.user, reqChannel)
+
+      if (userIsBanned) {
+        return response
+          .status(403)
+          .json({
+            message: `Unfortunately, you cannot join \"${reqChannel.name}\" \
+            as you have been permanently banned from this channel. \
+            If you believe this is a mistake, please contact the channel administrator.`,
+          })
+      }
+
       await this.ChannelRepository.addUser(reqChannel, auth.user.id)
       return response.json(
         { message: `You were added to channel ${payload.channelName}` })
@@ -164,7 +178,7 @@ export default class ChannelsController {
         this.ChannelRepository.addUser(newChannel, auth.user.id)
         return response.json({ message: `Channel ${payload.channelName} was created.` })
       }
-      console.log(error)
+      console.log(error.message)
       return response.status(error.status || 500).json({ message: error.message })
     }
   }
@@ -242,7 +256,7 @@ export default class ChannelsController {
       this.ChannelRepository.removeUser(reqChannel, auth.user.id)
       return response.json({ message: `You have left the channel ${reqChannel.name}.` })
     } catch (error) {
-      console.log(error)
+      console.log(error.message)
       return response.status(error.status || 500).send({ message: error.message })
     }
   }
@@ -318,7 +332,7 @@ export default class ChannelsController {
       return response.json(
         { message: `${invitedUser.nickname} was invited to the requested channel.` })
     } catch (error) {
-      console.log(error)
+      console.log(error.message)
       return response.status(error.status || 500).send({ message: error.message })
     }
   }
@@ -334,17 +348,19 @@ export default class ChannelsController {
     try {
       const reqChannel = await this.ChannelRepository.getChannel(channelId)
 
-      const targetUser = await this.UserRepository.getUser(targetUserName)
-      if (targetUserName === auth.user.nickname) {
-        return response
-          .status(403)
-          .json({ message: 'You are not allowed to remove yourself.' })
-      }
-
       if (reqChannel.isPublic) {
         return response
           .status(403)
           .json({ message: 'This command can be invoked only in private channels.' })
+      }
+
+      const targetUser = await this.UserRepository.getUser(targetUserName)
+      if (targetUserName === auth.user.nickname) {
+        return response
+          .status(403)
+          .json({
+            message: 'You can not remove yourself from channel with this command. \
+            You may want to use command "quit"' })
       }
 
       const isAdmin = await this.ChannelRepository.isAdmin(reqChannel, auth.user.id)
@@ -357,7 +373,7 @@ export default class ChannelsController {
       this.ChannelRepository.removeUser(reqChannel, targetUser.id)
       return response.json({ message: `User "${targetUser.nickname}" will be removed from "${reqChannel.name}"` })
     } catch (error) {
-      // console.log(error)
+      // console.log(error.message)
       return response
         .status(error.status || 500)
         .send({ message: error.message })
@@ -383,54 +399,19 @@ export default class ChannelsController {
 
       const targetUser = await this.UserRepository.getUser(targetUserName)
 
-      const isMember = await this.ChannelRepository.hasMember(reqChannel, targetUser.id)
-      if (!isMember) {
-        return response
-          .status(404)
-          .json({ message: `${targetUserName} is not a member of this channel.` })
-      }
+      await this.BanRepository.banUser(reqChannel, auth.user.id, targetUser)
 
-      if (targetUserName === auth.user.nickname) {
-        return response
-          .status(403)
-          .json({ message: 'You are not allowed to remove yourself.' })
-      }
-
+      const isBanned = await this.BanRepository.isBanned(targetUser, reqChannel)
       const isAdmin = await this.ChannelRepository.isAdmin(reqChannel, auth.user.id)
-      if (isAdmin) {
+
+      if (isAdmin || isBanned) {
         this.ChannelRepository.removeUser(reqChannel, targetUser.id)
         return response.json(
           { message: `User ${targetUser.nickname} is permanently banned from this channel.` })
       }
-
-      const banUserIsAdmin = await this.ChannelRepository.isAdmin(reqChannel, targetUser.id)
-      if (banUserIsAdmin) {
-        return response
-          .status(403)
-          .json({ message: 'Admin of the channel can not be banned.' })
-      }
-
-      const alreadyBannedFromUser = await Ban
-        .query()
-        .where('bannedUserId', targetUser.id)
-        .andWhere('channelId', reqChannel.id)
-        .andWhere('bannedById', auth.user.id)
-        .first()
-
-      if (!alreadyBannedFromUser) {
-        await Ban.create({
-          channelId: reqChannel.id,
-          bannedById: auth.user.id,
-          bannedUserId: targetUser.id,
-        })
-        return response.json(
-          { message: `User ${targetUser.nickname} is has received ban.` })
-      }
-      return response
-        .status(403)
-        .json({ message: `You had already banned "${targetUser.nickname}"` })
+      return response.json({ message: `${targetUser.nickname} has reveived a ban.` })
     } catch (error) {
-      console.log(error)
+      // console.log(error.message)
       return response
         .status(error.status || 500)
         .send({ message: error.message })
