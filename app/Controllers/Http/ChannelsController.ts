@@ -7,6 +7,7 @@ import { UserRepositoryContract } from '@ioc:Repositories/UserRepository'
 import Channel from 'App/Models/Channel'
 import Ban from 'App/Models/Ban'
 import { BanRepositoryContract } from '@ioc:Repositories/BanRepository'
+import ChannelNotExistException from 'App/Exceptions/ChannelNotExistException'
 
 @inject([
   'Repositories/UserRepository',
@@ -62,6 +63,9 @@ export default class ChannelsController {
    * @returns Channel messages older than provided message id
    */
   public async getChannelMessageRange({ request, response, params }: HttpContextContract) {
+    await new Promise((resolve) => {
+      setTimeout(resolve, 1000)
+    })
     try {
       const inputId = request.input('lastId', -1)
 
@@ -82,6 +86,8 @@ export default class ChannelsController {
       const message = await query.orderBy('id', 'desc')
         .limit(limit)
         .then(messages => messages.reverse())
+      console.log(message)
+
       return response.json(message)
     } catch (e) {
       return response
@@ -167,7 +173,7 @@ export default class ChannelsController {
         })
       }
       // If channel does not exist create a new one
-      if (error.status === 404 && error.message === 'Requested channel does not exist.') {
+      if (error instanceof ChannelNotExistException) {
         const newChannel = await this.ChannelRepository
           .createChannel(userId, payload.channelName, payload.isPublic)
 

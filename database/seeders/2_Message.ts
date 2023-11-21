@@ -28,12 +28,12 @@ export default class extends BaseSeeder {
           {
             channelId: channelGeneral.id,
             createdBy: userBar.id,
-            content: 'This is some @foo message',
+            content: '100',
           },
           {
             channelId: channelGeneral.id,
             createdBy: userFoo.id,
-            content: 'This is some message',
+            content: 'asd',
           },
           {
             channelId: channelGeneral.id,
@@ -43,7 +43,7 @@ export default class extends BaseSeeder {
           {
             channelId: channelGeneral.id,
             createdBy: userBar.id,
-            content: 'Voluptate nulla in dolore commodo eiusmod. Laboris\
+            content: 'Voluptate @foo nulla in dolore commodo eiusmod. Laboris\
            labore esse tempor fugiat velit nostrud. Sint ex ipsum do \
            esse officia cupidatat irure. Tempor sunt commodo nostrud \
            commodo esse. Sunt dolor ipsum excepteur irure eu do voluptate.',

@@ -1,6 +1,7 @@
-import { Exception, inject } from '@adonisjs/core/build/standalone'
+import { inject } from '@adonisjs/core/build/standalone'
 import { ChannelRepositoryContract } from '@ioc:Repositories/ChannelRepository'
 import { UserEventRouterContract } from '@ioc:Services/UserEventRouter'
+import ChannelNotExistException from 'App/Exceptions/ChannelNotExistException'
 import Channel from 'App/Models/Channel'
 import User from 'App/Models/User'
 
@@ -39,7 +40,7 @@ export default class ChannelRepository implements ChannelRepositoryContract {
         .where(searchField, identifier)
         .firstOrFail()
     } catch (error) {
-      throw new Exception('Requested channel does not exist.', 404)
+      throw new ChannelNotExistException('Requested channel does not exist.')
     }
   }
 
