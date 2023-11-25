@@ -50,6 +50,7 @@ Route
 Route
   .group(() => {
     Route.post('/state', 'UsersController.setState')
+    Route.post('/settings', 'UsersController.updateSettings')
   })
   .prefix('user')
   .middleware('auth')

@@ -5,6 +5,8 @@ import Channel from './Channel'
 
 export type UserState = (typeof USER_STATE)[number]
 export const USER_STATE = ['online', 'offline', 'dnd'] as const
+export type UserNotifySettings = (typeof USER_NOTIFY_SETTINGS)[number]
+export const USER_NOTIFY_SETTINGS = ['all', 'mentioned', 'none'] as const
 
 export default class User extends BaseModel {
   @column({ isPrimary: true })
@@ -27,6 +29,9 @@ export default class User extends BaseModel {
 
   @column()
   public state: UserState
+
+  @column()
+  public notifications: UserNotifySettings
 
   @column({ serializeAs: null })
   public rememberMeToken: string | null

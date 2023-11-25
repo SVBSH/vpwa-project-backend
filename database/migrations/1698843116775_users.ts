@@ -1,4 +1,5 @@
 import BaseSchema from '@ioc:Adonis/Lucid/Schema'
+import { USER_NOTIFY_SETTINGS, USER_STATE } from 'App/Models/User'
 
 export default class extends BaseSchema {
   protected tableName = 'users'
@@ -11,7 +12,8 @@ export default class extends BaseSchema {
       table.string('name', 255).notNullable()
       table.string('surname', 255).notNullable()
       table.string('email', 255).notNullable()
-      table.enum('state', ['online', 'offline', 'dnd'])
+      table.enum('state', USER_STATE)
+      table.enum('notifications', USER_NOTIFY_SETTINGS)
 
       table.string('remember_me_token').nullable()
 

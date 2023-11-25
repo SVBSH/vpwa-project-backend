@@ -12,6 +12,7 @@ export default class extends BaseSeeder {
       email: faker.internet.email(),
       password: '12345',
       state: faker.helpers.arrayElement(USER_STATE),
+      notifications: 'all' as const,
     })))
   }
 }
