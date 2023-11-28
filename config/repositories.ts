@@ -36,6 +36,7 @@ declare module '@ioc:Repositories/UserRepository' {
 
 declare module '@ioc:Repositories/MessageRepository' {
   import User from 'App/Models/User'
+  import Channel from 'App/Models/Channel'
 
   export interface RawMessage {
     channel: number
@@ -49,8 +50,13 @@ declare module '@ioc:Repositories/MessageRepository' {
     author: number
   }
 
+  export interface UserTypingMessage extends RawMessage {
+    author: number
+  }
+
   export interface MessageRepositoryContract {
-    createMessage(user: User, channel: number, text: string): Promise<unknown>
+    createMessage(user: User, channel: Channel, text: string): Promise<unknown>
+    broadcastTyping(user: User, channel: Channel, text: string): Promise<unknown>
   }
 
   const MessageRepository: MessageRepositoryContract

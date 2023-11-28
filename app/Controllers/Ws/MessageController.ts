@@ -1,11 +1,12 @@
 import { inject } from '@adonisjs/core/build/standalone'
-import Database from '@ioc:Adonis/Lucid/Database'
+import { ChannelRepositoryContract } from '@ioc:Repositories/ChannelRepository'
 import { MessageRepositoryContract } from '@ioc:Repositories/MessageRepository'
 import { WsContextContract } from '@ioc:Ruby184/Socket.IO/WsContext'
 import { UserEventRouterContract } from '@ioc:Services/UserEventRouter'
+import Channel from 'App/Models/Channel'
 import { RawMessageValidator } from 'App/Validators/RawMessageValidator'
 
-@inject(['Repositories/MessageRepository', 'Services/UserEventRouter'])
+@inject(['Repositories/MessageRepository', 'Services/UserEventRouter', 'Repositories/ChannelRepository'])
 export default class MessageController {
   public async onConnected({ socket, auth }: WsContextContract) {
     const user = auth.user!
@@ -15,14 +16,24 @@ export default class MessageController {
   public async postMessage({ auth }: WsContextContract, data: unknown) {
     const user = auth.user!
     const msg = await RawMessageValidator.validate(data)
-    const isUserInChannel = await Database.query()
-      .from('channel_users')
-      .where('user_id', user.id)
-      .andWhere('channel_id', msg.channel)
-      .select('id')
+    const channel = await Channel.findByOrFail('id', msg.channel)
+    const isUserInChannel = await this.ChannelRepository.hasMember(channel, user.id)
 
-    if (isUserInChannel.length > 0) {
-      await this.MessageRepository.createMessage(user, msg.channel, msg.text)
+    if (isUserInChannel) {
+      await this.MessageRepository.createMessage(user, channel, msg.text)
+    } else {
+      throw new Error('User is not in selected channel')
+    }
+  }
+
+  public async updateTyping({ auth }: WsContextContract, data: unknown) {
+    const user = auth.user!
+    const msg = await RawMessageValidator.validate(data)
+    const channel = await Channel.findByOrFail('id', msg.channel)
+    const isUserInChannel = await this.ChannelRepository.hasMember(channel, user.id)
+
+    if (isUserInChannel) {
+      await this.MessageRepository.broadcastTyping(user, channel, msg.text)
     } else {
       throw new Error('User is not in selected channel')
     }
@@ -30,6 +41,7 @@ export default class MessageController {
 
   constructor(
     private MessageRepository: MessageRepositoryContract,
-    private UserEventRouter: UserEventRouterContract
+    private UserEventRouter: UserEventRouterContract,
+    private ChannelRepository: ChannelRepositoryContract
   ) { }
 }
