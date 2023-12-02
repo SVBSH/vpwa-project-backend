@@ -27,6 +27,7 @@
     "@japa/runner": "^2.5.1",
     "@types/proxy-addr": "^2.0.2",
     "@types/source-map-support": "^0.5.9",
+    "@types/web-push": "^3.6.3",
     "adonis-preset-ts": "^2.1.0",
     "eslint": "^8.52.0",
     "eslint-plugin-adonis": "^2.1.1",
@@ -47,6 +48,7 @@
     "phc-argon2": "^1.1.4",
     "proxy-addr": "^2.0.7",
     "reflect-metadata": "^0.1.13",
-    "source-map-support": "^0.5.21"
+    "source-map-support": "^0.5.21",
+    "web-push": "^3.6.6"
   }
 }

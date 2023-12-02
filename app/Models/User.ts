@@ -42,6 +42,9 @@ export default class User extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })
   public updatedAt: DateTime
 
+  @column({ serializeAs: 'pushSubscription' })
+  public pushSubscription: string | null
+
   @manyToMany(() => Channel, {
     pivotTable: 'channel_users',
     pivotForeignKey: 'user_id',

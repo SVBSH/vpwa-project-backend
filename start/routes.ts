@@ -54,3 +54,12 @@ Route
   })
   .prefix('user')
   .middleware('auth')
+
+Route
+  .group(() => {
+    Route.get('/key', 'PushController.getVapidKey')
+    Route.post('/register', 'PushController.registerSubscription')
+    Route.post('/unregister', 'PushController.unregisterSubscription')
+  })
+  .prefix('push')
+  .middleware('auth')

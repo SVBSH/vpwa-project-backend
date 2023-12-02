@@ -14,6 +14,7 @@ export default class extends BaseSchema {
       table.string('email', 255).notNullable()
       table.enum('state', USER_STATE)
       table.enum('notifications', USER_NOTIFY_SETTINGS)
+      table.text('push_subscription')
 
       table.string('remember_me_token').nullable()
 

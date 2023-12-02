@@ -26,6 +26,10 @@ export default class UsersController {
       }
     }
 
+    if (updateUser.notifications === 'none') {
+      user.pushSubscription = null
+    }
+
     await user.save()
   }
 

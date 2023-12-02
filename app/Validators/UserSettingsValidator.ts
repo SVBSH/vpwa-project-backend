@@ -31,6 +31,7 @@ export default class UserSettingsValidator {
     email: schema.string.nullable({}),
     password: schema.string.nullable({}),
     notifications: schema.enum.nullable(USER_NOTIFY_SETTINGS),
+    pushSubscription: schema.string.nullable(),
   })
 
   /**

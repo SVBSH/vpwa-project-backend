@@ -26,6 +26,10 @@ export default class AppProvider {
     this.app.container.singleton('Services/UserEventRouter', (container) => {
       return container.make('App/Services/UserEventRouter')
     })
+
+    this.app.container.singleton('Services/PushManager', (container) => {
+      return container.make('App/Services/PushManager')
+    })
   }
 
   public async boot() {
