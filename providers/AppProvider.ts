@@ -30,6 +30,7 @@ export default class AppProvider {
 
   public async boot() {
     // IoC container is ready
+    this.app.container.make('App/Services/IdleChannelDeleter')
   }
 
   public async ready() {
