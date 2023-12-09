@@ -22,11 +22,16 @@ export default class MessageRepository implements MessageRepositoryContract {
 
     await channel.load('users')
     for (const user of channel.users) {
-      const allow = user.pushSubscription !== null && user.notifications !== 'none' && (
-        user.notifications === 'mentioned' ? (
-          text.includes('@' + user.nickname)
-        ) : (
-          true
+      const allow = (
+        user.pushSubscription !== null &&
+        user.notifications !== 'none' &&
+        user.state === 'online' &&
+        (
+          user.notifications === 'mentioned' ? (
+            text.includes('@' + user.nickname)
+          ) : (
+            true
+          )
         )
       )
 
