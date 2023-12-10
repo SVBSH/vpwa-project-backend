@@ -51,7 +51,7 @@ export default class Channel extends BaseModel {
   public bans: HasMany<typeof Ban>
 
   @manyToMany(() => User, {
-    pivotTable: 'channel_user_invintations',
+    pivotTable: 'channel_user_invitations',
     pivotForeignKey: 'channel_id',
     pivotRelatedForeignKey: 'host_id',
     pivotTimestamps: false,
