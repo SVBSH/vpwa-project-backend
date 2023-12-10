@@ -51,6 +51,9 @@ export default class ChannelsController {
       const channel = await this.ChannelRepository.getChannel(parseInt(params.id))
       await this.ChannelRepository.getMessagesForChannel(channel)
       await this.UserRepository.getUsersForChannel(channel)
+
+      channel.messages.reverse()
+
       response.json(channel.serialize())
     } catch (error) {
       return response.status(error.status || 500).json({ message: error.message })
@@ -64,13 +67,14 @@ export default class ChannelsController {
   public async getChannelMessageRange({ request, response, params }: HttpContextContract) {
     try {
       const inputId = request.input('lastId', -1)
+      await new Promise(r => setTimeout(r, 500))
 
       if (isNaN(inputId)) {
         return response.status(404).json(
           { message: 'Id of the last message must be a number' })
       }
       const lastId = parseInt(inputId)
-      const limit = 2
+      const limit = 10
       const channelId = params.id
 
       // return last <limit> number of messages
@@ -97,7 +101,6 @@ export default class ChannelsController {
   public async getUpdatedChannelMessages({ request, response, params }: HttpContextContract) {
     let lastId = request.input('lastId', -1)
     const channelId = params.id
-
     if (isNaN(lastId)) {
       return response.status(404).json({ message: 'Id of the last message must be a number' })
     }
