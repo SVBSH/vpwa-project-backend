@@ -50,6 +50,14 @@ export default class Channel extends BaseModel {
   })
   public bans: HasMany<typeof Ban>
 
+  @manyToMany(() => User, {
+    pivotTable: 'channel_user_invintations',
+    pivotForeignKey: 'channel_id',
+    pivotRelatedForeignKey: 'host_id',
+    pivotTimestamps: false,
+  })
+  public invitedMembers: ManyToMany<typeof User>
+
   @computed()
   public get type() {
     return this.isPublic === true ? 'public' : 'private'
