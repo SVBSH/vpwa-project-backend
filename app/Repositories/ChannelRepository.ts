@@ -13,10 +13,10 @@ export default class ChannelRepository implements ChannelRepositoryContract {
 
   public async getMessagesForChannel(channel: Channel) {
     await channel.load('messages', (messagesQuery) => {
-      messagesQuery.preload('author').orderBy('id', 'asc')
+      messagesQuery.preload('author').orderBy('id', 'desc').limit(10)
     })
-
-    return channel.messages
+    const messages = channel.messages.slice().reverse()
+    return messages
   }
 
   public async getBannedUsers(channel: Channel) {
@@ -34,10 +34,11 @@ export default class ChannelRepository implements ChannelRepositoryContract {
       } else {
         searchField = 'id'
       }
-      return await Channel
+      const channel = await Channel
         .query()
         .where(searchField, identifier)
         .firstOrFail()
+      return channel
     } catch (error) {
       throw new Exception('Requested channel does not exist.', 404)
     }
